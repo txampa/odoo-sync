@@ -66,7 +66,7 @@ class SheetsClient {
 async appendRows(rows) {
   try {
     // Construir el rango sin comillas adicionales si la hoja tiene espacios
-    const range = `${this.sheetName}!A:F`;
+    const range = `${this.sheetName}!A:F`;  // Sin comillas simples
     
     await this.sheets.spreadsheets.values.append({
       spreadsheetId: this.spreadsheetId,
@@ -90,7 +90,7 @@ async appendRows(rows) {
    */
   async getLastPickingDate() {
     try {
-      const range = `${this.sheetName}!A:A`;
+      const range = `${this.sheetName}!A:F`;  // Sin comillas simples
       const data = await this.readData(range);
       
       if (data.length <= 1) {
@@ -123,7 +123,7 @@ async appendRows(rows) {
    */
   async getExistingPedidos() {
     try {
-      const range = `'${this.sheetName}'!B:B`;
+      const range = `${this.sheetName}!B:B`;  // Sin comillas simples
       const data = await this.readData(range);
       
       if (data.length <= 1) {
