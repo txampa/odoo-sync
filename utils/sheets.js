@@ -63,26 +63,27 @@ class SheetsClient {
   /**
    * Escribir múltiples filas
    */
-  async appendRows(rows) {
-    try {
-      const range = `'${this.sheetName}'!A:F`;
-      
-      await this.sheets.spreadsheets.values.append({
-        spreadsheetId: this.spreadsheetId,
-        range: range,
-        valueInputOption: 'RAW',
-        resource: {
-          values: rows
-        }
-      });
+async appendRows(rows) {
+  try {
+    // Construir el rango sin comillas adicionales si la hoja tiene espacios
+    const range = `${this.sheetName}!A:F`;
+    
+    await this.sheets.spreadsheets.values.append({
+      spreadsheetId: this.spreadsheetId,
+      range: range,
+      valueInputOption: 'RAW',
+      resource: {
+        values: rows
+      }
+    });
 
-      console.log(`✅ ${rows.length} filas escritas en Google Sheets`);
-      return true;
-    } catch (error) {
-      console.error('❌ Error escribiendo en Google Sheets:', error.message);
-      return false;
-    }
+    console.log(`✅ ${rows.length} filas escritas en Google Sheets`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error escribiendo en Google Sheets:', error.message);
+    return false;
   }
+}
 
   /**
    * Obtener la última fecha de picking registrada
