@@ -63,34 +63,92 @@ class SheetsClient {
   /**
    * Escribir múltiples filas
    */
-async appendRows(rows) {
-  try {
-    // Construir el rango sin comillas adicionales si la hoja tiene espacios
-    const range = `${this.sheetName}!A:F`;  // Sin comillas simples
-    
-    await this.sheets.spreadsheets.values.append({
-      spreadsheetId: this.spreadsheetId,
-      range: range,
-      valueInputOption: 'RAW',
-      resource: {
-        values: rows
-      }
-    });
+  async appendRows(rows) {
+    try {
+      const range = `${this.sheetName}!A:F`;
+      
+      await this.sheets.spreadsheets.values.append({
+        spreadsheetId: this.spreadsheetId,
+        range: range,
+        valueInputOption: 'RAW',
+        resource: {
+          values: rows
+        }
+      });
 
-    console.log(`✅ ${rows.length} filas escritas en Google Sheets`);
-    return true;
-  } catch (error) {
-    console.error('❌ Error escribiendo en Google Sheets:', error.message);
-    return false;
+      console.log(`✅ ${rows.length} filas escritas en Google Sheets`);
+      return true;
+    } catch (error) {
+      console.error('❌ Error escribiendo en Google Sheets:', error.message);
+      return false;
+    }
   }
-}
+
+  /**
+   * Obtener el último pedido/grupo de abastecimiento registrado
+   */
+  async getLastPedido() {
+    try {
+      const range = `${this.sheetName}!B:B`;
+      const data = await this.readData(range);
+      
+      if (data.length <= 1) {
+        console.log('📅 La hoja está vacía, sincronizando desde el inicio');
+        return null;
+      }
+
+      // Buscar la última fila con datos (ignorar celdas vacías)
+      let lastPedido = null;
+      for (let i = data.length - 1; i >= 1; i--) {
+        if (data[i] && data[i][0]) {
+          lastPedido = data[i][0].toString();
+          break;
+        }
+      }
+
+      if (lastPedido) {
+        console.log(`📋 Último grupo registrado en Google Sheets: ${lastPedido}`);
+      }
+      
+      return lastPedido;
+    } catch (error) {
+      console.error('❌ Error obteniendo último pedido:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Obtener todos los pedidos ya registrados (para evitar duplicados)
+   */
+  async getExistingPedidos() {
+    try {
+      const range = `${this.sheetName}!B:B`;
+      const data = await this.readData(range);
+      
+      if (data.length <= 1) {
+        return new Set();
+      }
+
+      const pedidos = new Set();
+      data.slice(1).forEach(row => {
+        if (row && row[0]) {
+          pedidos.add(row[0].toString());
+        }
+      });
+
+      return pedidos;
+    } catch (error) {
+      console.error('❌ Error leyendo pedidos existentes:', error.message);
+      return new Set();
+    }
+  }
 
   /**
    * Obtener la última fecha de picking registrada
    */
   async getLastPickingDate() {
     try {
-      const range = `${this.sheetName}!A:F`;  // Sin comillas simples
+      const range = `${this.sheetName}!A:A`;
       const data = await this.readData(range);
       
       if (data.length <= 1) {
@@ -116,32 +174,6 @@ async appendRows(rows) {
       console.error('❌ Error obteniendo última fecha:', error.message);
       return null;
     }
-  }
-
-  /**
-   * Obtener todos los pedidos ya registrados (para evitar duplicados)
-   */
-  async getExistingPedidos() {
-  try {
-    const range = `${this.sheetName}!B:B`;
-    const data = await this.readData(range);
-    
-    if (data.length <= 1) {
-      return new Set();
-    }
-
-    const pedidos = new Set();
-    data.slice(1).forEach(row => {
-      if (row && row[0]) {
-        pedidos.add(row[0].toString());
-      }
-    });
-
-    console.log(`✅ Se cargaron ${pedidos.size} grupos de abastecimiento ya registrados`);
-    return pedidos;
-  } catch (error) {
-    console.error('❌ Error leyendo pedidos existentes:', error.message);
-    return new Set();
   }
 }
 
