@@ -1,6 +1,7 @@
 /**
  * 🔄 Sincronización Odoo → Google Sheets
  * Lógica principal de lectura, filtrado y escritura
+ * Con deduplicación por grupo de abastecimiento
  */
 
 const OdooClient = require('../config/odoo');
@@ -27,18 +28,23 @@ class SyncManager {
       await this.sheets.authenticate();
       console.log('✅ Autenticación exitosa\n');
 
-      // Paso 2: Obtener la última fecha registrada
+      // Paso 2: Obtener grupos de abastecimiento ya registrados (para deduplicación)
+      console.log('⏳ Obteniendo grupos de abastecimiento ya registrados...');
+      const existingGrupos = await this.sheets.getExistingPedidos();
+      console.log(`   📋 Grupos registrados: ${existingGrupos.size}\n`);
+
+      // Paso 3: Obtener la última fecha registrada
       console.log('⏳ Obteniendo última fecha registrada...');
       const lastDate = await this.sheets.getLastPickingDate();
       console.log();
 
-      // Paso 3: Construir dominio de búsqueda dinámicamente
+      // Paso 4: Construir dominio de búsqueda dinámicamente
       const domain = [['state', 'in', ['waiting', 'confirmed']]];
       if (lastDate) {
         domain.push(['date', '>=', lastDate]);
       }
 
-      // Paso 4: Leer albaranes de Odoo
+      // Paso 5: Leer albaranes de Odoo
       console.log('⏳ Leyendo albaranes de Odoo con estado "Esperando Disponibilidad"...');
       const pickings = await this.odoo.searchRead(
         'stock.picking',
@@ -48,14 +54,12 @@ class SyncManager {
       );
       console.log(`   📦 Albaranes encontrados: ${pickings.length}\n`);
 
-      // Paso 5: Procesar albaranes
+      // Paso 6: Procesar albaranes
       console.log('⏳ Procesando albaranes...');
       const rowsToAdd = [];
 
       for (const picking of pickings) {
         const pedidoId = picking.name;
-        
-        console.log(`   📍 Procesando: ${pedidoId}`);
         
         try {
           // Obtener detalles del albarán
@@ -68,6 +72,21 @@ class SyncManager {
           if (!pickingDetails || !pickingDetails.move_lines) {
             continue;
           }
+
+          // Extraer grupo de abastecimiento del origen
+          let grupoAbastecimiento = '';
+          if (pickingDetails.origin) {
+            const parts = pickingDetails.origin.split(':');
+            grupoAbastecimiento = parts[0].trim();
+          }
+
+          // ⚠️ VERIFICAR: Si el grupo ya existe, saltar
+          if (existingGrupos.has(grupoAbastecimiento)) {
+            console.log(`   ⏭️  Grupo ${grupoAbastecimiento} ya registrado, saltando...`);
+            continue;
+          }
+
+          console.log(`   📍 Procesando: ${pedidoId} (Grupo: ${grupoAbastecimiento})`);
 
           // Leer las líneas de movimiento
           const moveLines = await this.odoo.searchRead(
@@ -82,13 +101,6 @@ class SyncManager {
           if (waitingLines.length === 0) {
             console.log(`      ⏭️  Sin líneas en estado 'waiting'`);
             continue;
-          }
-
-          // Extraer grupo de abastecimiento del origen
-          let grupoAbastecimiento = '';
-          if (pickingDetails.origin) {
-            const parts = pickingDetails.origin.split(':');
-            grupoAbastecimiento = parts[0].trim();
           }
 
           // Procesar cada línea
@@ -118,7 +130,7 @@ class SyncManager {
         }
       }
 
-      // Paso 6: Escribir en Google Sheets
+      // Paso 7: Escribir en Google Sheets
       if (rowsToAdd.length > 0) {
         console.log(`\n⏳ Escribiendo ${rowsToAdd.length} filas en Google Sheets...\n`);
         await this.sheets.appendRows(rowsToAdd);
