@@ -63,26 +63,37 @@ class SheetsClient {
   /**
    * Escribir múltiples filas
    */
-  async appendRows(rows) {
-    try {
-      const range = `${this.sheetName}!A:F`;
-      
-      await this.sheets.spreadsheets.values.append({
-        spreadsheetId: this.spreadsheetId,
-        range: range,
-        valueInputOption: 'RAW',
-        resource: {
-          values: rows
-        }
-      });
+async appendRows(rows) {
+  try {
+    // 1. Leer toda la columna A para encontrar la ÚLTIMA fila real (sin contar filtros)
+    const allData = await this.sheets.spreadsheets.values.get({
+      spreadsheetId: this.spreadsheetId,
+      range: `${this.sheetName}!A:A`
+    });
 
-      console.log(`✅ ${rows.length} filas escritas en Google Sheets`);
-      return true;
-    } catch (error) {
-      console.error('❌ Error escribiendo en Google Sheets:', error.message);
-      return false;
-    }
+    // 2. Calcular la siguiente fila vacía (última real + 1)
+    const values = allData.data.values || [];
+    const lastRow = values.length; // Próxima fila donde escribir
+    
+    // 3. Escribir exactamente en esa posición, ignorando filtros
+    const range = `${this.sheetName}!A${lastRow + 1}:F${lastRow + rows.length}`;
+    
+    await this.sheets.spreadsheets.values.update({
+      spreadsheetId: this.spreadsheetId,
+      range: range,
+      valueInputOption: 'RAW',
+      resource: {
+        values: rows
+      }
+    });
+
+    console.log(`✅ ${rows.length} filas escritas en Google Sheets (Fila ${lastRow + 1})`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error escribiendo en Google Sheets:', error.message);
+    return false;
   }
+}
 
   /**
    * Obtener el último pedido/grupo de abastecimiento registrado
