@@ -1,0 +1,22 @@
+{
+  "name": "odoo-sync",
+  "version": "1.0.0",
+  "description": "Sincroniza pedidos Odoo en estado 'Esperando Disponibilidad' a Google Sheets",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "node test-sync.js"
+  },
+  "dependencies": {
+    "googleapis": "^118.0.0",
+    "node-cron": "^3.0.2",
+    "xmlrpc": "^1.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
