@@ -11,7 +11,7 @@ console.log('🚀 Iniciando servidor de sincronización...\n');
 const syncManager = new SyncManager();
 
 // Ejecutar sincronización cada 10 minutos
-const task = cron.schedule('*/10 * * * *', async () => {
+const task = cron.schedule('*/15 6-22 * * *', async () => {
   console.log(`\n⏰ [${new Date().toLocaleString()}] Ejecutando sincronización...`);
   await syncManager.sync();
 });
