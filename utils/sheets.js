@@ -122,26 +122,26 @@ async appendRows(rows) {
    * Obtener todos los pedidos ya registrados (para evitar duplicados)
    */
   async getExistingPedidos() {
-    try {
-      const range = `${this.sheetName}!B:B`;  // Sin comillas simples
-      const data = await this.readData(range);
-      
-      if (data.length <= 1) {
-        return new Set();
-      }
-
-      const pedidos = new Set();
-      data.slice(1).forEach(row => {
-        if (row && row[0]) {
-          pedidos.add(row[0].toString());
-        }
-      });
-
-      return pedidos;
-    } catch (error) {
-      console.error('❌ Error leyendo pedidos existentes:', error.message);
+  try {
+    const range = `${this.sheetName}!B:B`;
+    const data = await this.readData(range);
+    
+    if (data.length <= 1) {
       return new Set();
     }
+
+    const pedidos = new Set();
+    data.slice(1).forEach(row => {
+      if (row && row[0]) {
+        pedidos.add(row[0].toString());
+      }
+    });
+
+    console.log(`✅ Se cargaron ${pedidos.size} grupos de abastecimiento ya registrados`);
+    return pedidos;
+  } catch (error) {
+    console.error('❌ Error leyendo pedidos existentes:', error.message);
+    return new Set();
   }
 }
 
