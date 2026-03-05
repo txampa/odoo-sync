@@ -45,7 +45,7 @@ class SheetsClient {
   async readData(range = null) {
     try {
       if (!range) {
-        range = `'${this.sheetName}'!A:F`;
+        range = `${this.sheetName}!A:F`;
       }
 
       const response = await this.sheets.spreadsheets.values.get({
@@ -90,7 +90,7 @@ async appendRows(rows) {
    */
   async getLastPickingDate() {
     try {
-      const range = `'${this.sheetName}'!A:A`;
+      const range = `${this.sheetName}!A:A`;
       const data = await this.readData(range);
       
       if (data.length <= 1) {
